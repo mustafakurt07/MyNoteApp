@@ -52,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -189,22 +190,27 @@ private fun NoteCard(note: Note, onClick: () -> Unit) {
     val dateText = remember(note.createdAt) {
         SimpleDateFormat("dd MMM yyyy • HH:mm", Locale.getDefault()).format(Date(note.createdAt))
     }
+    
     val dark = isSystemInDarkTheme()
+    
     val accentColor = remember(note.id, note.createdAt, dark) {
         val key = if (note.id != 0L) note.id else note.createdAt
-        paletteFor(key, dark).third
+        paletteFor(key, dark)
     }
-    val contentTextColor = MaterialTheme.colorScheme.onSurface
-    val cardColor = if (dark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f) else Color(0xFFF7F8FA)
-    val cardBorder = MaterialTheme.colorScheme.outline.copy(alpha = if (dark) 0.25f else 0.15f)
+    
     ElevatedCard(
         modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(16.dp))
+            .border(
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = if (dark) 0.25f else 0.15f)), 
+                RoundedCornerShape(16.dp)
+            )
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = cardColor),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (dark) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f) else Color(0xFFF7F8FA)
+        ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -212,13 +218,13 @@ private fun NoteCard(note: Note, onClick: () -> Unit) {
                 title = note.title.ifBlank { "Başlıksız" },
                 dateText = dateText,
                 accent = accentColor,
-                textColor = contentTextColor
+                textColor = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = note.content.ifBlank { "İçerik yok" },
                 style = MaterialTheme.typography.bodyMedium,
-                color = contentTextColor,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
@@ -228,7 +234,7 @@ private fun NoteCard(note: Note, onClick: () -> Unit) {
                     note.tags.take(3).forEach { tag ->
                         AssistChip(
                             onClick = {},
-                            label = { Text(tag, color = contentTextColor) },
+                            label = { Text(tag, color = MaterialTheme.colorScheme.onSurface) },
                             colors = AssistChipDefaults.assistChipColors(
                                 containerColor = Color(0xFFF2F2F2)
                             )
@@ -268,24 +274,26 @@ private fun RowHeader(title: String, dateText: String, accent: Color, textColor:
     }
 }
 
-private fun paletteFor(key: Long, dark: Boolean): Triple<Color, Color, Color> {
-    val lightPalettes = listOf(
-        Triple(Color(0xFFEDE7F6), Color(0xFFE3F2FD), Color(0xFF7C4DFF)),
-        Triple(Color(0xFFFFF3E0), Color(0xFFFFEBEE), Color(0xFFFF7043)),
-        Triple(Color(0xFFE8F5E9), Color(0xFFE0F2F1), Color(0xFF26A69A)),
-        Triple(Color(0xFFFFFDE7), Color(0xFFE8F5E9), Color(0xFFF9A825)),
-        Triple(Color(0xFFFCE4EC), Color(0xFFEDE7F6), Color(0xFFD81B60))
-    )
-    val darkPalettes = listOf(
-        Triple(Color(0xFF1F1B2E), Color(0xFF212738), Color(0xFFB39DDB)),
-        Triple(Color(0xFF2B1B1F), Color(0xFF1F262A), Color(0xFFFFAB91)),
-        Triple(Color(0xFF172A24), Color(0xFF1D2A33), Color(0xFFA5D6A7)),
-        Triple(Color(0xFF2A2817), Color(0xFF1E2A1F), Color(0xFFFFE082)),
-        Triple(Color(0xFF2A1B24), Color(0xFF1E1B2A), Color(0xFFF48FB1))
-    )
-    val list = if (dark) darkPalettes else lightPalettes
-    val idx = (key % list.size).toInt()
-    return list[idx]
+private fun paletteFor(key: Long, dark: Boolean): Color {
+    val palettes = if (dark) {
+        listOf(
+            Color(0xFFB39DDB),
+            Color(0xFFFFAB91),
+            Color(0xFFA5D6A7),
+            Color(0xFFFFE082),
+            Color(0xFFF48FB1)
+        )
+    } else {
+        listOf(
+            Color(0xFF7C4DFF),
+            Color(0xFFFF7043),
+            Color(0xFF26A69A),
+            Color(0xFFF9A825),
+            Color(0xFFD81B60)
+        )
+    }
+    val idx = (key % palettes.size).toInt()
+    return palettes[idx]
 }
 
 @OptIn(ExperimentalLayoutApi::class)

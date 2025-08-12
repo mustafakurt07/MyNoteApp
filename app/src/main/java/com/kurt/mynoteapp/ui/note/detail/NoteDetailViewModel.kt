@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kurt.mynoteapp.data.local.Note
 import com.kurt.mynoteapp.domain.usecase.GetNoteByIdUseCase
 import com.kurt.mynoteapp.domain.usecase.UpsertNoteUseCase
+import com.kurt.mynoteapp.util.CommonUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,22 +13,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-data class NoteDetailUiState(
-    val isLoading: Boolean = true,
-    val note: Note = Note(title = "", content = ""),
-    val tagInput: String = ""
-)
-
-sealed interface NoteDetailIntent {
-    data class Load(val id: Long) : NoteDetailIntent
-    data class ChangeTitle(val title: String) : NoteDetailIntent
-    data class ChangeContent(val content: String) : NoteDetailIntent
-    data class ChangeTagInput(val value: String) : NoteDetailIntent
-    data class AddTag(val tag: String) : NoteDetailIntent
-    data class RemoveTag(val tag: String) : NoteDetailIntent
-    data object Save : NoteDetailIntent
-}
 
 @HiltViewModel
 class NoteDetailViewModel @Inject constructor(
@@ -51,7 +36,7 @@ class NoteDetailViewModel @Inject constructor(
 
     private fun load(id: Long) {
         viewModelScope.launch {
-            val loaded = if (id == 0L) Note(title = "", content = "") else getNoteById(id) ?: Note(title = "", content = "")
+            val loaded = if (id == 0L) Note(title = CommonUtil.emptyString(), content = CommonUtil.emptyString()) else getNoteById(id) ?: Note(title = CommonUtil.emptyString(), content = CommonUtil.emptyString())
             _uiState.update { it.copy(isLoading = false, note = loaded) }
         }
     }
@@ -67,7 +52,7 @@ class NoteDetailViewModel @Inject constructor(
             if (state.note.tags.contains(tag)) state
             else state.copy(
                 note = state.note.copy(tags = state.note.tags + tag),
-                tagInput = ""
+                tagInput = CommonUtil.emptyString()
             )
         }
     }
