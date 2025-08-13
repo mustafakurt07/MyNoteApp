@@ -34,8 +34,8 @@ class NoteListViewModel @Inject constructor(
 
     private val debouncedQuery = _query
         .map { it.trim() }
-        .distinctUntilChanged()
         .debounce(300)
+        .distinctUntilChanged()
 
 
     // UI ham query'yi anında görsün; filtreleme debounce edilmiş query ile çalışsın
