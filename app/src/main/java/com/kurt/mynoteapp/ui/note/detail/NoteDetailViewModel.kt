@@ -7,6 +7,8 @@ import com.kurt.mynoteapp.domain.usecase.GetNoteByIdUseCase
 import com.kurt.mynoteapp.domain.usecase.UpsertNoteUseCase
 import com.kurt.mynoteapp.util.CommonUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +23,9 @@ class NoteDetailViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(NoteDetailUiState())
     val uiState: StateFlow<NoteDetailUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<NoteDetailEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<NoteDetailEvent> = _events
 
     fun onIntent(intent: NoteDetailIntent) {
         when (intent) {
@@ -37,14 +42,14 @@ class NoteDetailViewModel @Inject constructor(
     private fun load(id: Long) {
         viewModelScope.launch {
             val loaded = if (id == 0L) Note(title = CommonUtil.emptyString(), content = CommonUtil.emptyString()) else getNoteById(id) ?: Note(title = CommonUtil.emptyString(), content = CommonUtil.emptyString())
-            _uiState.update { it.copy(isLoading = false, note = loaded, closeRequested = false) }
+            _uiState.update { it.copy(isLoading = false, note = loaded) }
         }
     }
 
     private fun save() {
         viewModelScope.launch {
             upsertNote(uiState.value.note)
-            _uiState.update { it.copy(closeRequested = true) }
+            _events.tryEmit(NoteDetailEvent.Close)
         }
     }
 
@@ -66,5 +71,4 @@ class NoteDetailViewModel @Inject constructor(
         }
     }
 }
-
 

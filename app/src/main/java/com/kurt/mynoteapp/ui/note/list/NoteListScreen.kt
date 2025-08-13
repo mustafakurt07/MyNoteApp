@@ -16,16 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.rememberDismissState
-import androidx.compose.material.DismissDirection
-import androidx.compose.material.DismissValue
-import androidx.compose.material.DismissState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material.Scaffold
+import androidx.compose.material3.Scaffold
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Delete
@@ -45,6 +42,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -101,6 +100,7 @@ fun NoteListRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteListScreen(
     state: NoteListUiState,
@@ -174,33 +174,32 @@ fun NoteListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeToDismissItem(
     note: Note,
     onClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val dismissState = rememberDismissState(confirmStateChange = { value ->
-        if (value == DismissValue.DismissedToStart) {
+    val dismissState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+        if (value == SwipeToDismissBoxValue.EndToStart) {
             onDismiss(); true
         } else false
     })
 
-    SwipeToDismiss(
+    SwipeToDismissBox(
         state = dismissState,
-        background = { DismissBackground(dismissState) },
-        dismissContent = {
-            NoteCard(note = note, onClick = onClick)
-        },
-        directions = setOf(DismissDirection.EndToStart)
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
+        backgroundContent = { DismissBackground(dismissState) },
+        content = { NoteCard(note = note, onClick = onClick) }
     )
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DismissBackground(state: DismissState) {
-    val bg = if (state.targetValue == DismissValue.DismissedToStart) Color(0xFFFFE6E6) else Color.Transparent
+private fun DismissBackground(state: SwipeToDismissBoxState) {
+    val bg = if (state.targetValue == SwipeToDismissBoxValue.EndToStart) Color(0xFFFFE6E6) else Color.Transparent
     Surface(color = bg) {
         Box(
             modifier = Modifier

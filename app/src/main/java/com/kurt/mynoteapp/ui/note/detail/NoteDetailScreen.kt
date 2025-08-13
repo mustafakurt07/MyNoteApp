@@ -42,8 +42,12 @@ fun NoteDetailRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(noteId) { viewModel.onIntent(NoteDetailIntent.Load(noteId)) }
-    LaunchedEffect(state.closeRequested) {
-        if (state.closeRequested) onBack()
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                NoteDetailEvent.Close -> onBack()
+            }
+        }
     }
     NoteDetailScreen(
         state = state,
