@@ -6,5 +6,4 @@ sealed interface NoteListIntent {
     data class Delete(val note: Note) : NoteListIntent
     data class ChangeQuery(val value: String) : NoteListIntent
     data class ToggleTag(val value: String) : NoteListIntent
-    data class SnackbarShown(val consumed: Boolean = true) : NoteListIntent
 }

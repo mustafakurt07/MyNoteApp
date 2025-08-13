@@ -45,14 +45,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kurt.mynoteapp.data.local.Note
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,7 +68,8 @@ fun NoteListRoute(
     onAddNew: () -> Unit,
     viewModel: NoteListViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
+
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     NoteListScreen(
         state = state,
         onDelete = { viewModel.onIntent(NoteListIntent.Delete(it)) },
@@ -83,7 +80,6 @@ fun NoteListRoute(
     )
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun NoteListScreen(
     state: NoteListUiState,
@@ -93,24 +89,11 @@ fun NoteListScreen(
     onQueryChange: (String) -> Unit,
     onToggleTag: (String) -> Unit
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(state.snackbar) {
-        val msg = state.snackbar
-        if (msg != null) snackbarHostState.showSnackbar(message = msg)
-    }
-
     val allTags = remember(state.notes) { state.notes.flatMap { it.tags }.toSet() }
-    val filtered = remember(state.notes, state.query, state.tagFilters) {
-        state.notes.filter { n ->
-            (state.query.isBlank() || n.title.contains(state.query, true) || n.content.contains(state.query, true)) &&
-            (state.tagFilters.isEmpty() || n.tags.any { it in state.tagFilters })
-        }
-    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Notlar") }) },
-        floatingActionButton = { FloatingActionButton(onClick = onAddNew) { Icon(Icons.Filled.Add, null) } },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        floatingActionButton = { FloatingActionButton(onClick = onAddNew) { Icon(Icons.Filled.Add, null) } }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             SearchAndFilters(
@@ -125,14 +108,14 @@ fun NoteListScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-            } else if (filtered.isEmpty()) {
+            } else if (state.filteredNotes.isEmpty()) {
                 EmptyState(onAddNew)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp)
                 ) {
-                    items(items = filtered, key = { it.id }) { note ->
+                    items(items = state.filteredNotes, key = { it.id }) { note ->
                         SwipeToDismissItem(
                             note = note,
                             onClick = { onNoteClick(note.id) },
