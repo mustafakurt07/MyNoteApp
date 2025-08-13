@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -55,15 +53,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kurt.mynoteapp.data.local.Note
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.kurt.mynoteapp.util.DateFormatUtils
+
+// Sabit palette'ler - performans için
+private val LIGHT_PALETTE = listOf(
+    Color(0xFF7C4DFF),
+    Color(0xFFFF7043),
+    Color(0xFF26A69A),
+    Color(0xFFF9A825),
+    Color(0xFFD81B60)
+)
+
+private val DARK_PALETTE = listOf(
+    Color(0xFFB39DDB),
+    Color(0xFFFFAB91),
+    Color(0xFFA5D6A7),
+    Color(0xFFFFE082),
+    Color(0xFFF48FB1)
+)
 
 @Composable
 fun NoteListRoute(
@@ -93,8 +108,8 @@ fun NoteListScreen(
     onQueryChange: (String) -> Unit,
     onToggleTag: (String) -> Unit
 ) {
-    val listState = rememberLazyListState()
-    
+    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+
     // Yeni not eklendiğinde otomatik olarak en üste scroll
     LaunchedEffect(state.filteredNotes.firstOrNull()?.id, state.filteredNotes.size) {
         val shouldScrollTop =
@@ -130,7 +145,11 @@ fun NoteListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp)
                 ) {
-                    items(items = state.filteredNotes, key = { it.id }) { note ->
+                    items(
+                        items = state.filteredNotes, 
+                        key = { it.id },
+                        contentType = { "note" }
+                    ) { note ->
                         SwipeToDismissItem(
                             note = note,
                             onClick = { onNoteClick(note.id) },
@@ -186,7 +205,7 @@ private fun DismissBackground(state: DismissState) {
 @Composable
 private fun NoteCard(note: Note, onClick: () -> Unit) {
     val dateText = remember(note.createdAt) {
-        SimpleDateFormat("dd MMM yyyy • HH:mm", Locale.getDefault()).format(Date(note.createdAt))
+        DateFormatUtils.format(note.createdAt)
     }
     
     val dark = isSystemInDarkTheme()
@@ -272,23 +291,7 @@ private fun RowHeader(title: String, dateText: String, accent: Color, textColor:
 }
 
 private fun paletteFor(key: Long, dark: Boolean): Color {
-    val palettes = if (dark) {
-        listOf(
-            Color(0xFFB39DDB),
-            Color(0xFFFFAB91),
-            Color(0xFFA5D6A7),
-            Color(0xFFFFE082),
-            Color(0xFFF48FB1)
-        )
-    } else {
-        listOf(
-            Color(0xFF7C4DFF),
-            Color(0xFFFF7043),
-            Color(0xFF26A69A),
-            Color(0xFFF9A825),
-            Color(0xFFD81B60)
-        )
-    }
+    val palettes = if (dark) DARK_PALETTE else LIGHT_PALETTE
     val idx = (key % palettes.size).toInt()
     return palettes[idx]
 }
@@ -308,7 +311,7 @@ private fun SearchAndFilters(
             onValueChange = onQueryChange,
             placeholder = { Text("Ara...") },
             singleLine = true,
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = "Ara") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp)
         )
