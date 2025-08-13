@@ -37,12 +37,15 @@ class NoteDetailViewModel @Inject constructor(
     private fun load(id: Long) {
         viewModelScope.launch {
             val loaded = if (id == 0L) Note(title = CommonUtil.emptyString(), content = CommonUtil.emptyString()) else getNoteById(id) ?: Note(title = CommonUtil.emptyString(), content = CommonUtil.emptyString())
-            _uiState.update { it.copy(isLoading = false, note = loaded) }
+            _uiState.update { it.copy(isLoading = false, note = loaded, closeRequested = false) }
         }
     }
 
     private fun save() {
-        viewModelScope.launch { upsertNote(uiState.value.note) }
+        viewModelScope.launch {
+            upsertNote(uiState.value.note)
+            _uiState.update { it.copy(closeRequested = true) }
+        }
     }
 
     private fun addTag(raw: String) {

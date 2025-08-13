@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,6 +42,9 @@ fun NoteDetailRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(noteId) { viewModel.onIntent(NoteDetailIntent.Load(noteId)) }
+    LaunchedEffect(state.closeRequested) {
+        if (state.closeRequested) onBack()
+    }
     NoteDetailScreen(
         state = state,
         onTitleChange = { viewModel.onIntent(NoteDetailIntent.ChangeTitle(it)) },
@@ -46,10 +52,7 @@ fun NoteDetailRoute(
         onTagInputChange = { viewModel.onIntent(NoteDetailIntent.ChangeTagInput(it)) },
         onAddTag = { viewModel.onIntent(NoteDetailIntent.AddTag(it)) },
         onRemoveTag = { viewModel.onIntent(NoteDetailIntent.RemoveTag(it)) },
-        onSave = {
-            viewModel.onIntent(NoteDetailIntent.Save)
-            onBack()
-        },
+        onSave = { viewModel.onIntent(NoteDetailIntent.Save) },
         onBack = onBack
     )
 }
@@ -71,10 +74,10 @@ fun NoteDetailScreen(
             TopAppBar(
                 title = { Text("Not Detayı") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = null) }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Geri") }
                 },
                 actions = {
-                    IconButton(onClick = onSave) { Icon(Icons.Default.Done, contentDescription = null) }
+                    IconButton(onClick = onSave) { Icon(Icons.Filled.Done, contentDescription = "Kaydet") }
                 }
             )
         }
@@ -105,6 +108,8 @@ fun NoteDetailScreen(
                             onValueChange = onTagInputChange,
                             label = { Text("Etiket ekle") },
                             modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { onAddTag(state.tagInput) }),
                             shape = RoundedCornerShape(10.dp)
                         )
                         Button(onClick = { onAddTag(state.tagInput) }, enabled = state.tagInput.isNotBlank()) {

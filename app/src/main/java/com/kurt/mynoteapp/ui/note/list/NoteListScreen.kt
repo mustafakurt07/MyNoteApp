@@ -101,7 +101,6 @@ fun NoteListRoute(
     )
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun NoteListScreen(
     state: NoteListUiState,
