@@ -89,8 +89,6 @@ fun NoteListScreen(
     onQueryChange: (String) -> Unit,
     onToggleTag: (String) -> Unit
 ) {
-    val allTags = remember(state.notes) { state.notes.flatMap { it.tags }.toSet() }
-
     Scaffold(
         topBar = { TopAppBar(title = { Text("Notlar") }) },
         floatingActionButton = { FloatingActionButton(onClick = onAddNew) { Icon(Icons.Filled.Add, null) } }
@@ -99,7 +97,7 @@ fun NoteListScreen(
             SearchAndFilters(
                 query = state.query,
                 onQueryChange = onQueryChange,
-                allTags = allTags.toList(),
+                allTags = state.allTags.toList(),
                 selected = state.tagFilters,
                 onToggle = onToggleTag
             )

@@ -8,5 +8,6 @@ data class NoteListUiState(
     val notes: List<Note> = emptyList(),
     val query: String = CommonUtil.emptyString(),
     val tagFilters: Set<String> = emptySet(),
-    val filteredNotes: List<Note> = emptyList()
+    val filteredNotes: List<Note> = emptyList(),
+    val allTags: Set<String> = emptySet()
 )

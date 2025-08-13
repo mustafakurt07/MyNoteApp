@@ -48,12 +48,15 @@ class NoteListViewModel @Inject constructor(
             matchesQuery && matchesTags
         }
         
+        val allTags = notes.flatMap { it.tags }.toSet()
+        
         NoteListUiState(
             isLoading = isLoading,
             notes = notes,
             query = query,
             tagFilters = tagFilters,
-            filteredNotes = filtered
+            filteredNotes = filtered,
+            allTags = allTags
         )
     }.stateIn(
         scope = viewModelScope,
