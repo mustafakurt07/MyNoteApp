@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -48,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,6 +83,7 @@ fun NoteListRoute(
     )
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun NoteListScreen(
     state: NoteListUiState,
@@ -89,9 +93,21 @@ fun NoteListScreen(
     onQueryChange: (String) -> Unit,
     onToggleTag: (String) -> Unit
 ) {
+    val listState = rememberLazyListState()
+    
+    // Yeni not eklendiğinde otomatik olarak en üste scroll
+    LaunchedEffect(state.filteredNotes.firstOrNull()?.id, state.filteredNotes.size) {
+        val shouldScrollTop =
+            listState.firstVisibleItemIndex > 0 &&
+                    state.filteredNotes.isNotEmpty()
+        if (shouldScrollTop) {
+            listState.animateScrollToItem(0)
+        }
+    }
+    
     Scaffold(
         topBar = { TopAppBar(title = { Text("Notlar") }) },
-        floatingActionButton = { FloatingActionButton(onClick = onAddNew) { Icon(Icons.Filled.Add, null) } }
+        floatingActionButton = { FloatingActionButton(onClick = onAddNew) { Icon(Icons.Filled.Add, "Yeni not") } }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             SearchAndFilters(
@@ -110,6 +126,7 @@ fun NoteListScreen(
                 EmptyState(onAddNew)
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp)
                 ) {
@@ -160,7 +177,7 @@ private fun DismissBackground(state: DismissState) {
                 .padding(horizontal = 20.dp),
             contentAlignment = Alignment.CenterEnd
         ) {
-            Icon(imageVector = Icons.Outlined.Delete, contentDescription = null, tint = Color(0xFFD32F2F))
+            Icon(imageVector = Icons.Outlined.Delete, contentDescription = "Sil", tint = Color(0xFFD32F2F))
         }
     }
 }
@@ -182,7 +199,6 @@ private fun NoteCard(note: Note, onClick: () -> Unit) {
     ElevatedCard(
         modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
             .border(
                 BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = if (dark) 0.25f else 0.15f)), 
                 RoundedCornerShape(16.dp)
