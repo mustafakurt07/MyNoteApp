@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kurt.mynoteapp.data.local.Note
 import com.kurt.mynoteapp.domain.usecase.DeleteNoteUseCase
 import com.kurt.mynoteapp.domain.usecase.ObserveNotesUseCase
+import com.kurt.mynoteapp.util.CommonUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,6 +82,10 @@ class NoteListViewModel @Inject constructor(
                 val current = _tagFilters.value.toMutableSet()
                 if (!current.add(intent.value)) current.remove(intent.value)
                 _tagFilters.value = current
+            }
+            is NoteListIntent.ClearFilters -> {
+                _query.value = CommonUtil.emptyString()
+                _tagFilters.value = emptySet()
             }
         }
     }

@@ -6,7 +6,7 @@ object Converters {
     @TypeConverter
     @JvmStatic
     fun fromString(value: String?): List<String> =
-        value?.takeIf { it.isNotBlank() }?.split("|") ?: emptyList()
+        value?.takeIf { it.isNotBlank() }?.split("|")?.let { listOf(*it.toTypedArray()) } ?: emptyList()
 
     @TypeConverter
     @JvmStatic

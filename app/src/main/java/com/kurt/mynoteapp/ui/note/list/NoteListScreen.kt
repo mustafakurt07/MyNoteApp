@@ -86,15 +86,18 @@ fun NoteListRoute(
     onAddNew: () -> Unit,
     viewModel: NoteListViewModel = hiltViewModel()
 ) {
-
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    val onClearFilters = remember { { viewModel.onIntent(NoteListIntent.ClearFilters) } }
+    
     NoteListScreen(
         state = state,
         onDelete = { viewModel.onIntent(NoteListIntent.Delete(it)) },
         onNoteClick = onNoteClick,
         onAddNew = onAddNew,
         onQueryChange = { viewModel.onIntent(NoteListIntent.ChangeQuery(it)) },
-        onToggleTag = { viewModel.onIntent(NoteListIntent.ToggleTag(it)) }
+        onToggleTag = { viewModel.onIntent(NoteListIntent.ToggleTag(it)) },
+        onClearFilters = onClearFilters
     )
 }
 
@@ -106,10 +109,11 @@ fun NoteListScreen(
     onNoteClick: (Long) -> Unit,
     onAddNew: () -> Unit,
     onQueryChange: (String) -> Unit,
-    onToggleTag: (String) -> Unit
+    onToggleTag: (String) -> Unit,
+    onClearFilters: () -> Unit
 ) {
     val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
-
+    
     // Yeni not eklendiğinde otomatik olarak en üste scroll
     LaunchedEffect(state.filteredNotes.firstOrNull()?.id, state.filteredNotes.size) {
         val shouldScrollTop =
@@ -128,7 +132,7 @@ fun NoteListScreen(
             SearchAndFilters(
                 query = state.query,
                 onQueryChange = onQueryChange,
-                allTags = state.allTags.toList(),
+                allTags = remember(state.allTags) { state.allTags.toList().sorted() },
                 selected = state.tagFilters,
                 onToggle = onToggleTag
             )
@@ -138,7 +142,16 @@ fun NoteListScreen(
                     CircularProgressIndicator()
                 }
             } else if (state.filteredNotes.isEmpty()) {
-                EmptyState(onAddNew)
+                val hasTagFilters = remember(state.tagFilters) { state.tagFilters.isNotEmpty() }
+                val onClearFiltersCallback = remember(state.tagFilters, onClearFilters) {
+                    if (state.tagFilters.isNotEmpty()) onClearFilters else null
+                }
+                
+                EmptyState(
+                    onAddNew = onAddNew, 
+                    hasTagFilters = hasTagFilters, 
+                    onClearFilters = onClearFiltersCallback
+                )
             } else {
                 LazyColumn(
                     state = listState,
@@ -332,17 +345,35 @@ private fun SearchAndFilters(
 }
 
 @Composable
-private fun EmptyState(onAddNew: () -> Unit) {
+private fun EmptyState(
+    onAddNew: () -> Unit,
+    hasTagFilters: Boolean = false,
+    onClearFilters: (() -> Unit)? = null
+) {
     Column(
         modifier = Modifier.fillMaxSize().padding(32.dp),
         verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Hiç not yok", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Yeni bir not oluşturarak başlayın", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onAddNew, colors = ButtonDefaults.buttonColors()) { Text("Yeni Not Oluştur") }
+        if (hasTagFilters) {
+            Text("Bu tag'de not bulunamadı", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Farklı tag'ler seçin veya filtreleri temizleyin", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(16.dp))
+            if (onClearFilters != null) {
+                Button(onClick = onClearFilters, colors = ButtonDefaults.buttonColors()) { 
+                    Text("Filtreleri Temizle") 
+                }
+            }
+        } else {
+            Text("Hiç not yok", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Yeni bir not oluşturarak başlayın", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onAddNew, colors = ButtonDefaults.buttonColors()) { 
+                Text("Yeni Not Oluştur") 
+            }
+        }
     }
 }
 
