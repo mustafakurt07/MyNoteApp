@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @OptIn(FlowPreview::class)
@@ -30,31 +31,33 @@ class NoteListViewModel @Inject constructor(
     private val _query = MutableStateFlow("")
     private val _tagFilters = MutableStateFlow<Set<String>>(emptySet())
     private val _isLoading = MutableStateFlow(true)
-    
-    // Reaktif filtreleme: notes + query + tagFilters değişince otomatik filtreleme
+
+    private val debouncedQuery = _query
+        .map { it.trim() }
+        .distinctUntilChanged()
+        .debounce(300)
+
+
+    // UI ham query'yi anında görsün; filtreleme debounce edilmiş query ile çalışsın
     val uiState: StateFlow<NoteListUiState> = combine(
         _isLoading,
         _notes,
-        _query.debounce(300).distinctUntilChanged(), // Sadece query'de debounce
-        _tagFilters
-    ) { isLoading, notes, query, tagFilters ->
+        _query,              // raw query -> UI
+        _tagFilters,
+        debouncedQuery       // debounced -> filtering
+    ) { isLoading, notes, rawQuery, tagFilters, filtQuery ->
         val filtered = notes.filter { note ->
-            val matchesQuery = query.isBlank() || 
-                note.title.contains(query, true) || 
-                note.content.contains(query, true)
-            
-            val matchesTags = tagFilters.isEmpty() || 
-                note.tags.any { tag -> tag in tagFilters }
-            
+            val matchesQuery = filtQuery.isBlank() || 
+                note.title.contains(filtQuery, true) || 
+                note.content.contains(filtQuery, true)
+            val matchesTags = tagFilters.isEmpty() || note.tags.any { it in tagFilters }
             matchesQuery && matchesTags
         }
-        
         val allTags = notes.flatMap { it.tags }.toSet()
-        
         NoteListUiState(
             isLoading = isLoading,
             notes = notes,
-            query = query,
+            query = rawQuery,          // UI anında güncellenir
             tagFilters = tagFilters,
             filteredNotes = filtered,
             allTags = allTags
