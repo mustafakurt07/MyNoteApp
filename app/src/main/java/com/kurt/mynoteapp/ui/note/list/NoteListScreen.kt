@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,8 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -111,7 +111,7 @@ fun NoteListScreen(
     onToggleTag: (String) -> Unit,
     onClearFilters: () -> Unit
 ) {
-    val listState = rememberSaveable(saver = LazyListState.Saver) { LazyListState() }
+    val listState = rememberLazyListState()
     
     // Yeni not eklendiğinde otomatik olarak en üste scroll
     LaunchedEffect(state.filteredNotes.firstOrNull()?.id, state.filteredNotes.size) {
@@ -260,13 +260,15 @@ private fun NoteCard(note: Note, onClick: () -> Unit) {
             )
             if (note.tags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
+                val chipContainer = if (dark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF2F2F2)
+                val chipLabel = MaterialTheme.colorScheme.onSurface
                 FlowRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
                     note.tags.take(3).forEach { tag ->
                         AssistChip(
                             onClick = {},
-                            label = { Text(tag, color = MaterialTheme.colorScheme.onSurface) },
+                            label = { Text(tag, color = chipLabel) },
                             colors = AssistChipDefaults.assistChipColors(
-                                containerColor = Color(0xFFF2F2F2)
+                                containerColor = chipContainer
                             )
                         )
                     }
@@ -319,6 +321,13 @@ private fun SearchAndFilters(
     selected: Set<String>,
     onToggle: (String) -> Unit
 ) {
+    val dark = isSystemInDarkTheme()
+    val chipColors = FilterChipDefaults.filterChipColors(
+        containerColor = if (dark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF2F2F2),
+        labelColor = MaterialTheme.colorScheme.onSurface,
+        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+        selectedLabelColor = MaterialTheme.colorScheme.onSurface
+    )
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         OutlinedTextField(
             value = query,
@@ -337,7 +346,8 @@ private fun SearchAndFilters(
                     FilterChip(
                         selected = isSelected,
                         onClick = { onToggle(tag) },
-                        label = { Text(tag) }
+                        label = { Text(tag) },
+                        colors = chipColors
                     )
                 }
             }
