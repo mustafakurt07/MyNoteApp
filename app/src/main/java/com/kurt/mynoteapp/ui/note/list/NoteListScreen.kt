@@ -199,7 +199,10 @@ private fun SwipeToDismissItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DismissBackground(state: SwipeToDismissBoxState) {
-    val bg = if (state.targetValue == SwipeToDismissBoxValue.EndToStart) Color(0xFFFFE6E6) else Color.Transparent
+    val show = state.targetValue == SwipeToDismissBoxValue.EndToStart ||
+        state.currentValue == SwipeToDismissBoxValue.EndToStart
+    if (!show) return
+    val bg = Color(0xFFFFE6E6)
     Surface(color = bg) {
         Box(
             modifier = Modifier
