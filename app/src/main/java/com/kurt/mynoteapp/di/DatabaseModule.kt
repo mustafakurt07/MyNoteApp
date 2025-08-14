@@ -23,7 +23,7 @@ object DatabaseModule {
         context,
         NoteDatabase::class.java,
         "notes.db"
-    ).fallbackToDestructiveMigration(false).build()
+    ).fallbackToDestructiveMigration(true).build()
 
     @Provides
     fun provideNoteDao(db: NoteDatabase): NoteDao = db.noteDao()
